@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flappy Bird - Epic Boss Final</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: #87CEEB;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #gameContainer {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            top: 0;
+            left: 0;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            background: #87CEEB;
+            display: block;
+        }
+        
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: white;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        #coins {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: gold;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        #level {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            font-size: 20px;
+            color: #FFD700;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        #bossHealth {
+            position: absolute;
+            top: 80px;
+            left: 10px;
+            font-size: 18px;
+            color: #FF0000;
+            text-shadow: 2px 2px 0 #000;
+            display: none;
+        }
+        
+        #shootButton {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #FF416C, #FF4B2B);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            font-weight: bold;
+            z-index: 100;
+        }
+        
+        #healthBar {
+            position: absolute;
+            top: 110px;
+            left: 10px;
+            width: 200px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #fff;
+            display: none;
+            z-index: 100;
+        }
+        
+        #healthFill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ffff00);
+            width: 100%;
+            transition: width 0.3s;
+        }
+        
+        #lives {
+            position: absolute;
+            top: 10px;
+            left: 200px;
+            font-size: 24px;
+            color: #FF0000;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        #cheatInput {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            border: 2px solid #333;
+            border-radius: 10px;
+            display: none;
+            z-index: 100;
+        }
+        
+        #cheatHint {
+            position: absolute;
+            bottom: 60px;
+            left: 20px;
+            color: yellow;
+            font-size: 12px;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: none;
+            z-index: 100;
+        }
+        
+        #godButton {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            padding: 15px;
+            font-size: 24px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: black;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            font-weight: bold;
+            z-index: 100;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #godModeActive {
+            position: absolute;
+            top: 140px;
+            left: 10px;
+            font-size: 16px;
+            color: #00FF00;
+            text-shadow: 2px 2px 0 #000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="score">Score: 0</div>
+        <div id="coins">Coins: 0</div>
+        <div id="level">Level: 1</div>
+        <div id="lives">❤️: 3</div>
+        <div id="bossHealth"></div>
+        <div id="healthBar">
+            <div id="healthFill"></div>
+        </div>
+        <div id="godModeActive">⚡ РЕЖИМ БОГА АКТИВЕН!</div>
+        <button id="shootButton">🔥 ОГОНЬ</button>
+        <button id="godButton">⚡</button>
+        <input type="text" id="cheatInput" placeholder="Введите пароль...">
+        <div id="cheatHint">Пароль в тг @TheTelegramOffice</div>
+    </div>
+
+    <script>
+        // Получаем элементы
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const coinsElement = document.getElementById('coins');
+        const levelElement = document.getElementById('level');
+        const bossHealthElement = document.getElementById('bossHealth');
+        const shootButton = document.getElementById('shootButton');
+        const healthBar = document.getElementById('healthBar');
+        const cheatInput = document.getElementById('cheatInput');
+        const cheatHint = document.getElementById('cheatHint');
+        const livesElement = document.getElementById('lives');
+        const godButton = document.getElementById('godButton');
+        const godModeActive = document.getElementById('godModeActive');
+
+        // Устанавливаем размер canvas на весь экран
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Настройки игры
+        const config = {
+            gravity: 0.3,
+            jumpForce: -6.5,
+            pipeSpeed: 2,
+            pipeGap: 200,
+            pipeWidth: 70,
+            pipeInterval: 2200,
+            coinSpawnChance: 0.6,
+            maxFallSpeed: 8,
+            rotationSpeed: 0.1,
+            healthSpawnChance: 0.1
+        };
+
+        // Состояние игры
+        let gameState = {
+            bird: { 
+                x: 100, 
+                y: 300, 
+                width: 40, 
+                height: 30,
+                velocity: 0,
+                wingAngle: 0,
+                rotation: 0
+            },
+            pipes: [],
+            coins: [],
+            healthPacks: [],
+            playerBullets: [],
+            score: 0,
+            coinsCollected: 0,
+            level: 1,
+            gameOver: false,
+            gameWon: false,
+            lastPipeTime: 0,
+            boss: null,
+            gameStarted: false,
+            playerLives: 3,
+            godMode: false,
+            currentBossLevel: 0,
+            scoreMultiplier: 1
+        };
+
+        // СИСТЕМА БОССОВ
+        const bossLevels = {
+            100: {
+                health: 50,
+                speed: 1.5,
+                color: '#FF6B6B',
+                attackCooldown: 90,
+                name: "НОВИЧОК"
+            },
+            500: {
+                health: 120,
+                speed: 2,
+                color: '#FF4757',
+                attackCooldown: 70,
+                name: "ВОИН"
+            },
+            1500: {
+                health: 250,
+                speed: 2.5,
+                color: '#FF3838',
+                attackCooldown: 50,
+                name: "МАСТЕР"
+            },
+            5000: {
+                health: 500,
+                speed: 3,
+                color: '#FF0000',
+                attackCooldown: 30,
+                name: "ЛЕГЕНДА"
+            },
+            9999: {
+                health: 1000,
+                speed: 3.5,
+                color: '#8B0000',
+                attackCooldown: 15,
+                name: "БОГ"
+            }
+        };
+
+        // Система уровней
+        const levels = {
+            1: { pipeSpeed: 2, pipeGap: 200, gravity: 0.3, pipeInterval: 2200 },
+            2: { pipeSpeed: 2.3, pipeGap: 190, gravity: 0.32, pipeInterval: 2100 },
+            3: { pipeSpeed: 2.6, pipeGap: 180, gravity: 0.34, pipeInterval: 2000 },
+            4: { pipeSpeed: 2.9, pipeGap: 170, gravity: 0.36, pipeInterval: 1900 },
+            5: { pipeSpeed: 3.2, pipeGap: 160, gravity: 0.38, pipeInterval: 1800 }
+        };
+
+        function updateLevel() {
+            const newLevel = Math.floor(gameState.score / 5) + 1;
+            if (newLevel > gameState.level) {
+                gameState.level = newLevel;
+                levelElement.textContent = `Level: ${gameState.level}`;
+                
+                const levelSettings = levels[Math.min(newLevel, 5)] || levels[5];
+                Object.assign(config, levelSettings);
+            }
+        }
+
+        // БОСС-СИСТЕМА
+        function createBoss(score) {
+            const bossConfig = bossLevels[score];
+            if (!bossConfig) return null;
+
+            gameState.currentBossLevel = score;
+            shootButton.style.display = 'block';
+            bossHealthElement.style.display = 'block';
+            healthBar.style.display = 'block';
+            
+            return {
+                x: canvas.width,
+                y: canvas.height / 2,
+                width: 80,
+                height: 60,
+                health: bossConfig.health,
+                maxHealth: bossConfig.health,
+                speed: bossConfig.speed,
+                color: bossConfig.color,
+                attackCooldown: bossConfig.attackCooldown,
+                attackTimer: 0,
+                movingUp: true,
+                lasers: [],
+                name: bossConfig.name,
+                phase: 1
+            };
+        }
+
+        function updateBoss() {
+            if (!gameState.boss) return;
+
+            const boss = gameState.boss;
+            
+            // Движение босса
+            if (boss.movingUp) {
+                boss.y -= boss.speed;
+                if (boss.y < 100) boss.movingUp = false;
+            } else {
+                boss.y += boss.speed;
+                if (boss.y > canvas.height - 150) boss.movingUp = true;
+            }
+
+            // Движение к игроку
+            if (boss.x > canvas.width - 200) {
+                boss.x -= 2;
+            }
+
+            // Атаки босса
+            boss.attackTimer--;
+            if (boss.attackTimer <= 0) {
+                createBossAttack();
+                boss.attackTimer = boss.attackCooldown;
+            }
+
+            // Обновление лазеров
+            updateBossLasers();
+            
+            updateBossHealth();
+        }
+
+        function createBossAttack() {
+            const boss = gameState.boss;
+            const attackTypes = gameState.currentBossLevel;
+            
+            if (attackTypes <= 500) {
+                // Простая атака
+                boss.lasers.push({
+                    x: boss.x,
+                    y: boss.y + boss.height / 2,
+                    speedX: -5,
+                    speedY: 0,
+                    width: 20,
+                    height: 8,
+                    color: '#FF0000'
+                });
+            } else if (attackTypes <= 1500) {
+                // Двойная атака
+                boss.lasers.push({
+                    x: boss.x,
+                    y: boss.y + 20,
+                    speedX: -5,
+                    speedY: 0,
+                    width: 18,
+                    height: 8,
+                    color: '#FFA500'
+                });
+                boss.lasers.push({
+                    x: boss.x,
+                    y: boss.y + boss.height - 20,
+                    speedX: -5,
+                    speedY: 0,
+                    width: 18,
+                    height: 8,
+                    color: '#FFA500'
+                });
+            } else if (attackTypes <= 5000) {
+                // Тройная атака
+                for (let i = -1; i <= 1; i++) {
+                    boss.lasers.push({
+                        x: boss.x,
+                        y: boss.y + boss.height / 2 + i * 25,
+                        speedX: -5,
+                        speedY: 0,
+                        width: 16,
+                        height: 8,
+                        color: '#FFFF00'
+                    });
+                }
+            } else {
+                // Ультра атака
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    boss.lasers.push({
+                        x: boss.x,
+                        y: boss.y + boss.height / 2,
+                        speedX: -4 * Math.cos(angle),
+                        speedY: -4 * Math.sin(angle),
+                        width: 12,
+                        height: 12,
+                        color: '#FF00FF'
+                    });
+                }
+            }
+        }
+
+        function updateBossLasers() {
+            const boss = gameState.boss;
+            for (let i = boss.lasers.length - 1; i >= 0; i--) {
+                const laser = boss.lasers[i];
+                laser.x += laser.speedX;
+                laser.y += laser.speedY;
+                
+                if (checkLaserCollision(laser)) {
+                    loseLife();
+                    boss.lasers.splice(i, 1);
+                    continue;
+                }
+                
+                if (laser.x < -50 || laser.x > canvas.width + 50 || 
+                    laser.y < -50 || laser.y > canvas.height + 50) {
+                    boss.lasers.splice(i, 1);
+                }
+            }
+        }
+
+        function checkBossCollision() {
+            const bird = gameState.bird;
+            const boss = gameState.boss;
+            
+            return (bird.x < boss.x + boss.width &&
+                    bird.x + bird.width > boss.x &&
+                    bird.y < boss.y + boss.height &&
+                    bird.y + bird.height > boss.y);
+        }
+
+        function checkLaserCollision(laser) {
+            const bird = gameState.bird;
+            return (bird.x < laser.x + laser.width &&
+                    bird.x + bird.width > laser.x &&
+                    bird.y < laser.y + laser.height &&
+                    bird.y + bird.height > laser.y);
+        }
+
+        function updateBossHealth() {
+            const boss = gameState.boss;
+            const healthPercent = (boss.health / boss.maxHealth) * 100;
+            bossHealthElement.textContent = `BOSS ${boss.name}: ${Math.round(boss.health)}/${boss.maxHealth}`;
+            document.getElementById('healthFill').style.width = healthPercent + '%';
+            
+            if (boss.health <= 0) {
+                defeatBoss();
+            }
+        }
+
+        function defeatBoss() {
+            gameState.score += gameState.currentBossLevel * 2;
+            scoreElement.textContent = `Score: ${gameState.score}`;
+            gameState.boss = null;
+            shootButton.style.display = 'none';
+            bossHealthElement.style.display = 'none';
+            healthBar.style.display = 'none';
+            gameState.currentBossLevel = 0;
+        }
+
+        // СИСТЕМА СТРЕЛЬБЫ ИГРОКА
+        function shoot() {
+            if (!gameState.boss || gameState.gameOver) return;
+            
+            gameState.playerBullets.push({
+                x: gameState.bird.x + gameState.bird.width,
+                y: gameState.bird.y + gameState.bird.height / 2 - 4,
+                width: 15,
+                height: 6,
+                speed: 8,
+                color: '#FF4500'
+            });
+        }
+
+        function updatePlayerBullets() {
+            for (let i = gameState.playerBullets.length - 1; i >= 0; i--) {
+                const bullet = gameState.playerBullets[i];
+                bullet.x += bullet.speed;
+                
+                if (bullet.x > canvas.width) {
+                    gameState.playerBullets.splice(i, 1);
+                    continue;
+                }
+                
+                // Проверка попадания в босса
+                if (gameState.boss && checkBulletCollision(bullet, gameState.boss)) {
+                    // Босс иногда уворачивается (20% шанс)
+                    if (Math.random() > 0.2) {
+                        gameState.boss.health -= 5;
+                    }
+                    gameState.playerBullets.splice(i, 1);
+                }
+            }
+        }
+
+        function checkBulletCollision(bullet, boss) {
+            return (bullet.x < boss.x + boss.width &&
+                    bullet.x + bullet.width > boss.x &&
+                    bullet.y < boss.y + boss.height &&
+                    bullet.y + bullet.height > boss.y);
+        }
+
+        // СИСТЕМА АПТЕЧЕК
+        function createHealthPack(x, y) {
+            gameState.healthPacks.push({
+                x: x,
+                y: y,
+                width: 20,
+                height: 20,
+                collected: false
+            });
+        }
+
+        function updateHealthPacks() {
+            for (let i = gameState.healthPacks.length - 1; i >= 0; i--) {
+                const pack = gameState.healthPacks[i];
+                pack.x -= config.pipeSpeed;
+                
+                if (!pack.collected && checkHealthPackCollision(pack)) {
+                    pack.collected = true;
+                    if (gameState.playerLives < 5) {
+                        gameState.playerLives++;
+                        livesElement.textContent = `❤️: ${gameState.playerLives}`;
+                    }
+                }
+                
+                if (pack.x < -50 || pack.collected) {
+                    gameState.healthPacks.splice(i, 1);
+                }
+            }
+        }
+
+        function checkHealthPackCollision(pack) {
+            const bird = gameState.bird;
+            return (bird.x < pack.x + pack.width &&
+                    bird.x + bird.width > pack.x &&
+                    bird.y < pack.y + pack.height &&
+                    bird.y + bird.height > pack.y);
+        }
+
+        // СИСТЕМА РЕЖИМА БОГА
+        function activateGodMode() {
+            gameState.godMode = true;
+            gameState.playerLives = 999;
+            gameState.scoreMultiplier = 5; // Счет идет в 5 раз быстрее!
+            livesElement.textContent = `❤️: ∞`;
+            godModeActive.style.display = 'block';
+            cheatInput.style.display = 'none';
+            cheatHint.style.display = 'none';
+            
+            // Визуальный эффект активации
+            showGodModeEffect();
+        }
+
+        function showGodModeEffect() {
+            // Можно добавить визуальные эффекты для режима бога
+            ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            setTimeout(() => {
+                // Эффект исчезает через 500ms
+            }, 500);
+        }
+
+        function drawBoss() {
+            const boss = gameState.boss;
+            if (!boss) return;
+
+            // Тело босса (большая птица)
+            ctx.fillStyle = boss.color;
+            ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
+            
+            // Голова
+            ctx.fillStyle = boss.color;
+            ctx.fillRect(boss.x + boss.width - 20, boss.y - 10, 25, 25);
+            
+            // Красные глаза
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(boss.x + boss.width - 15, boss.y - 5, 6, 6);
+            ctx.fillRect(boss.x + boss.width - 5, boss.y - 5, 6, 6);
+            
+            // Крылья
+            ctx.fillStyle = boss.color;
+            const wingOffset = Math.sin(Date.now() / 200) * 10;
+            ctx.fillRect(boss.x - 15, boss.y + 10, 20, 15);
+            ctx.fillRect(boss.x - 15, boss.y + boss.height - 25, 20, 15);
+            
+            // Рисуем лазеры
+            ctx.fillStyle = '#00FFFF';
+            boss.lasers.forEach(laser => {
+                ctx.fillStyle = laser.color;
+                ctx.fillRect(laser.x, laser.y, laser.width, laser.height);
+            });
+        }
+
+        function drawPlayerBullets() {
+            gameState.playerBullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                
+                // Эффект огня
+                ctx.fillStyle = '#FFFF00';
+                ctx.fillRect(bullet.x - 3, bullet.y + 1, 5, bullet.height - 2);
+            });
+        }
+
+        function drawHealthPack(pack) {
+            ctx.fillStyle = '#00FF00';
+            ctx.fillRect(pack.x, pack.y, pack.width, pack.height);
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText('+', pack.x + 5, pack.y + 15);
+        }
+
+        // ОСНОВНЫЕ ФУНКЦИИ ИГРЫ
+        function drawBird() {
+            const bird = gameState.bird;
+            
+            ctx.save();
+            ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
+            
+            let rotation = bird.velocity * config.rotationSpeed;
+            rotation = Math.max(-0.5, Math.min(0.5, rotation));
+            ctx.rotate(rotation);
+            
+            // Тело птички (фиолетовое овальное)
+            ctx.fillStyle = '#8A2BE2';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, bird.width / 2, bird.height / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Голова
+            ctx.fillStyle = '#8A2BE2';
+            ctx.beginPath();
+            ctx.arc(bird.width / 2 - 5, -bird.height / 2 + 10, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Анимированные крылья на теле
+            ctx.fillStyle = '#6A0DAD';
+            const wingAmplitude = Math.sin(bird.wingAngle) * 8;
+            
+            // Левое крыло (на теле)
+            ctx.beginPath();
+            ctx.moveTo(-5, -5);
+            ctx.lineTo(-15 - wingAmplitude, 0);
+            ctx.lineTo(-5, 5);
+            ctx.closePath();
+            ctx.fill();
+
+            // Правое крыло (на теле)
+            ctx.beginPath();
+            ctx.moveTo(-5, -5);
+            ctx.lineTo(-15 - wingAmplitude, -10);
+            ctx.lineTo(-5, 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Глаз
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(bird.width / 2 - 2, -bird.height / 2 + 8, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(bird.width / 2 - 1, -bird.height / 2 + 7, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Клюв
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(bird.width / 2 + 2, -bird.height / 2 + 10);
+            ctx.lineTo(bird.width / 2 + 15, -bird.height / 2 + 10);
+            ctx.lineTo(bird.width / 2 + 2, -bird.height / 2 + 15);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawPipe(x, topHeight, bottomY) {
+            // Верхняя труба (золотая)
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(x, 0, config.pipeWidth, topHeight);
+            
+            // Детали золотой трубы
+            ctx.fillStyle = '#FFA500';
+            ctx.fillRect(x - 3, topHeight - 20, config.pipeWidth + 6, 10);
+            ctx.fillRect(x - 3, 0, config.pipeWidth + 6, 10);
+            
+            // Нижняя труба (золотая)
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(x, bottomY, config.pipeWidth, canvas.height - bottomY);
+            
+            // Детали золотой трубы
+            ctx.fillStyle = '#FFA500';
+            ctx.fillRect(x - 3, bottomY, config.pipeWidth + 6, 10);
+            ctx.fillRect(x - 3, canvas.height - 10, config.pipeWidth + 6, 10);
+        }
+
+        function drawCoin(coin) {
+            ctx.save();
+            ctx.translate(coin.x, coin.y);
+            
+            // Вращение вбок (как монетка подбрасывается)
+            ctx.rotate(coin.rotation * Math.PI);
+            
+            // Внешний круг монеты
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(0, 0, coin.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Внутренний круг
+            ctx.fillStyle = '#FFA500';
+            ctx.beginPath();
+            ctx.arc(0, 0, coin.radius - 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Блеск на монете
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-3, -3, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawBackground() {
+            // Небо
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Земля
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+            
+            // Трава
+            ctx.fillStyle = '#32CD32';
+            ctx.fillRect(0, canvas.height - 30, canvas.width, 5);
+        }
+
+        function drawStartScreen() {
+            // Полупрозрачный фон
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Красивый квадрат для сообщения
+            const boxWidth = Math.min(500, canvas.width - 40);
+            const boxHeight = 300;
+            const boxX = canvas.width / 2 - boxWidth / 2;
+            const boxY = canvas.height / 2 - boxHeight / 2;
+            
+            // Градиент для квадрата
+            const gradient = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxHeight);
+            gradient.addColorStop(0, '#4B0082');
+            gradient.addColorStop(1, '#8A2BE2');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+            
+            // Рамка
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+            
+            // Текст сообщения
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 28px Arial';
+            ctx.textAlign = 'center';
+            
+            ctx.fillText('Боссы на счетах: 100, 500, 1500, 5000, 9999', canvas.width / 2, boxY + 60);
+            ctx.font = '20px Arial';
+            ctx.fillText('Тапай по экрану чтобы лететь', canvas.width / 2, boxY + 100);
+            ctx.fillText('Кнопка ОГОНЬ появится против боссов', canvas.width / 2, boxY + 130);
+            ctx.fillText('Собирай аптечки для дополнительных жизней', canvas.width / 2, boxY + 160);
+            
+            ctx.font = 'bold 24px Arial';
+            ctx.fillStyle = '#FFD700';
+            ctx.fillText('Нажми чтобы начать!', canvas.width / 2, boxY + 200);
+            
+            ctx.textAlign = 'left';
+        }
+
+        function init() {
+            gameState = {
+                bird: { 
+                    x: 100, 
+                    y: canvas.height / 2, 
+                    width: 40, 
+                    height: 30,
+                    velocity: 0,
+                    wingAngle: 0,
+                    rotation: 0
+                },
+                pipes: [],
+                coins: [],
+                healthPacks: [],
+                playerBullets: [],
+                score: 0,
+                coinsCollected: 0,
+                level: 1,
+                gameOver: false,
+                gameWon: false,
+                lastPipeTime: 0,
+                boss: null,
+                gameStarted: false,
+                playerLives: 3,
+                godMode: false,
+                currentBossLevel: 0,
+                scoreMultiplier: 1
+            };
+            scoreElement.textContent = 'Score: 0';
+            coinsElement.textContent = 'Coins: 0';
+            levelElement.textContent = 'Level: 1';
+            livesElement.textContent = '❤️: 3';
+            bossHealthElement.style.display = 'none';
+            healthBar.style.display = 'none';
+            shootButton.style.display = 'none';
+            cheatInput.style.display = 'none';
+            cheatHint.style.display = 'none';
+            godModeActive.style.display = 'none';
+            
+            Object.assign(config, levels[1]);
+        }
+
+        function jump() {
+            if (!gameState.gameStarted) {
+                gameState.gameStarted = true;
+                return;
+            }
+            
+            if (!gameState.gameOver) {
+                gameState.bird.velocity = config.jumpForce;
+            }
+        }
+
+        function createPipe() {
+            const minHeight = 80;
+            const maxHeight = canvas.height - config.pipeGap - minHeight - 30;
+            const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+            
+            const newPipe = {
+                x: canvas.width,
+                topHeight: topHeight,
+                bottomY: topHeight + config.pipeGap,
+                passed: false
+            };
+            
+            gameState.pipes.push(newPipe);
+            
+            if (Math.random() < config.coinSpawnChance) {
+                gameState.coins.push({
+                    x: canvas.width + config.pipeWidth / 2,
+                    y: topHeight + config.pipeGap / 2,
+                    radius: 8,
+                    collected: false,
+                    rotation: 0
+                });
+            }
+            
+            // Спаун аптечки с небольшим шансом
+            if (Math.random() < config.healthSpawnChance) {
+                createHealthPack(canvas.width + config.pipeWidth / 2, topHeight + config.pipeGap / 2 - 30);
+            }
+        }
+
+        function checkCollision(bird, pipe) {
+            const birdRight = bird.x + bird.width;
+            const birdBottom = bird.y + bird.height;
+            const pipeRight = pipe.x + config.pipeWidth;
+            
+            if (birdRight > pipe.x && 
+                bird.x < pipeRight && 
+                bird.y < pipe.topHeight) {
+                return true;
+            }
+            
+            if (birdRight > pipe.x && 
+                bird.x < pipeRight && 
+                birdBottom > pipe.bottomY) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        function checkCoinCollision(bird, coin) {
+            if (coin.collected) return false;
+            
+            const birdCenterX = bird.x + bird.width / 2;
+            const birdCenterY = bird.y + bird.height / 2;
+            const distance = Math.sqrt(
+                Math.pow(birdCenterX - coin.x, 2) + 
+                Math.pow(birdCenterY - coin.y, 2)
+            );
+            
+            return distance < (bird.width / 2 + coin.radius);
+        }
+
+        function loseLife() {
+            if (gameState.godMode) return;
+            
+            gameState.playerLives--;
+            livesElement.textContent = `❤️: ${gameState.playerLives}`;
+            
+            if (gameState.playerLives <= 0) {
+                gameState.gameOver = true;
+            }
+            // УБРАЛ РЕСПАВН - птичка продолжает лететь после потери жизни!
+        }
+
+        function update(currentTime) {
+            if (!gameState.gameStarted || gameState.gameOver) return;
+            
+            const bird = gameState.bird;
+            
+            // Анимация крыльев
+            bird.wingAngle += 0.3;
+            
+            bird.velocity += config.gravity;
+            bird.y += bird.velocity;
+            
+            if (bird.velocity > config.maxFallSpeed) {
+                bird.velocity = config.maxFallSpeed;
+            }
+            
+            updateLevel();
+            
+            // Проверка появления босса
+            const bossScores = [100, 500, 1500, 5000, 9999];
+            for (const score of bossScores) {
+                if (gameState.score >= score && !gameState.boss && gameState.currentBossLevel !== score) {
+                    gameState.boss = createBoss(score);
+                    break;
+                }
+            }
+            
+            if (gameState.boss) {
+                updateBoss();
+                updatePlayerBullets();
+                
+                // Проверка столкновения с боссом
+                if (checkBossCollision()) {
+                    loseLife();
+                }
+            } else {
+                if (currentTime - gameState.lastPipeTime > config.pipeInterval) {
+                    createPipe();
+                    gameState.lastPipeTime = currentTime;
+                }
+                
+                for (let i = gameState.pipes.length - 1; i >= 0; i--) {
+                    const pipe = gameState.pipes[i];
+                    pipe.x -= config.pipeSpeed;
+                    
+                    if (checkCollision(bird, pipe)) {
+                        loseLife();
+                        if (gameState.gameOver) return;
+                    }
+                    
+                    if (!pipe.passed && pipe.x + config.pipeWidth < bird.x) {
+                        pipe.passed = true;
+                        gameState.score += 1 * gameState.scoreMultiplier; // Умножаем на множитель
+                        scoreElement.textContent = `Score: ${gameState.score}`;
+                    }
+                    
+                    if (pipe.x + config.pipeWidth < 0) {
+                        gameState.pipes.splice(i, 1);
+                    }
+                }
+                
+                for (let i = gameState.coins.length - 1; i >= 0; i--) {
+                    const coin = gameState.coins[i];
+                    coin.x -= config.pipeSpeed;
+                    coin.rotation += 0.05;
+                    
+                    if (!coin.collected && checkCoinCollision(bird, coin)) {
+                        coin.collected = true;
+                        gameState.coinsCollected++;
+                        coinsElement.textContent = `Coins: ${gameState.coinsCollected}`;
+                    }
+                    
+                    if (coin.x + coin.radius < 0) {
+                        gameState.coins.splice(i, 1);
+                    }
+                }
+                
+                updateHealthPacks();
+            }
+            
+            if (bird.y < -20 || bird.y + bird.height > canvas.height - 25) {
+                loseLife();
+            }
+        }
+
+        function draw() {
+            drawBackground();
+            
+            if (!gameState.gameStarted) {
+                drawStartScreen();
+                drawBird();
+                return;
+            }
+            
+            if (gameState.boss) {
+                drawBoss();
+                drawPlayerBullets();
+            } else {
+                gameState.pipes.forEach(pipe => {
+                    drawPipe(pipe.x, pipe.topHeight, pipe.bottomY);
+                });
+                
+                gameState.coins.forEach(coin => {
+                    if (!coin.collected) {
+                        drawCoin(coin);
+                    }
+                });
+                
+                gameState.healthPacks.forEach(pack => {
+                    if (!pack.collected) {
+                        drawHealthPack(pack);
+                    }
+                });
+            }
+            
+            drawBird();
+            
+            if (gameState.gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '36px Arial';
+                ctx.textAlign = 'center';
+                
+                if (gameState.gameWon) {
+                    ctx.fillText('ПОБЕДА!', canvas.width / 2, canvas.height / 2 - 60);
+                    ctx.font = '24px Arial';
+                    ctx.fillText(`Финальный счет: ${gameState.score}`, canvas.width / 2, canvas.height / 2 - 20);
+                    ctx.fillText('Ты прошел все боссов!', canvas.width / 2, canvas.height / 2 + 20);
+                } else {
+                    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60);
+                    ctx.font = '24px Arial';
+                    ctx.fillText(`Score: ${gameState.score}`, canvas.width / 2, canvas.height / 2 - 20);
+                    ctx.fillText(`Coins: ${gameState.coinsCollected}`, canvas.width / 2, canvas.height / 2 + 10);
+                    ctx.fillText(`Level: ${gameState.level}`, canvas.width / 2, canvas.height / 2 + 40);
+                }
+                ctx.fillText('Нажми чтобы играть снова', canvas.width / 2, canvas.height / 2 + 80);
+                ctx.textAlign = 'left';
+            }
+        }
+
+        // ОБРАБОТЧИКИ СОБЫТИЙ
+        canvas.addEventListener('click', function() {
+            if (gameState.gameOver) {
+                init();
+            } else {
+                jump();
+            }
+        });
+
+        shootButton.addEventListener('click', function() {
+            shoot();
+        });
+
+        godButton.addEventListener('click', function() {
+            cheatInput.style.display = 'block';
+            cheatHint.style.display = 'block';
+        });
+
+        // Обработчик чит-кода
+        cheatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const code = this.value.trim();
+                if (code === 'Firstgod') {
+                    activateGodMode();
+                    this.value = '';
+                } else {
+                    alert('Неверный пароль! Пароль в тг @TheTelegramOffice');
+                    this.value = '';
+                }
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'Enter') {
+                e.preventDefault();
+                if (gameState.gameOver) {
+                    init();
+                } else {
+                    jump();
+                }
+            }
+        });
+
+        // Оптимизированный игровой цикл
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+            if (deltaTime > 16) {
+                update(timestamp);
+                draw();
+                lastTime = timestamp;
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Инициализация игры
+        init();
+        gameLoop(0);
+    </script>
+</body>
+</html>
